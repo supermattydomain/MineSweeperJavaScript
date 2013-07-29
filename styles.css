@@ -1,0 +1,110 @@
+@CHARSET "UTF-8";
+
+.resizable {
+	float: left; /* trigger shrinkwrap */
+	padding: 10px;
+	border: 1px solid black;
+	position: relative;
+	width: 250px;
+	height: 250px;
+}
+
+#board {
+	width: 100%;
+	height: 100%;
+}
+
+table.minesweeper {
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	margin: 0;
+	border: 0px;
+	border-collapse: separate;
+	border-spacing: 0;
+	empty-cells: show;
+	/* table-layout: fixed; */
+}
+
+table.minesweeper tr {
+	overflow: hidden;
+	text-overflow: clip;
+}
+
+table.minesweeper td {
+	padding: 0;
+	margin: 0;
+	vertical-align: middle;
+	text-align: center;
+	overflow: hidden;
+	text-overflow: clip;
+}
+
+table.minesweeper td.unrevealed {
+	border: 2px outset;
+	background-color: #CCCCCC;
+	cursor: pointer;
+}
+
+table.minesweeper td.unrevealed.flag {
+	background-image: url("flag.svg");
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+table.minesweeper td.unrevealed.flag.correct {
+	border: 2px outset green;
+}
+
+table.minesweeper td.unrevealed.flag.incorrect {
+	border: 2px outset red;
+}
+
+table.minesweeper td.revealed {
+	border: 2px solid #999999;
+	background-color: #AAAAAA;
+	font-weight: bold;
+}
+
+table.minesweeper td.revealed span.mines0 {
+}
+
+table.minesweeper td.revealed span.mines1 {
+	color: blue;
+}
+
+table.minesweeper td.revealed span.mines2 {
+	color: green;
+}
+
+table.minesweeper td.revealed span.mines3 {
+	color: red;
+}
+
+table.minesweeper td.revealed span.mines4 {
+	color: aqua;
+}
+
+table.minesweeper td.revealed span.mines5 {
+	color: fuchsia;
+}
+
+table.minesweeper td.revealed span.mines6 {
+	color: yellow;
+}
+
+table.minesweeper td.revealed span.mines7 {
+	color: #FF6666;
+}
+
+table.minesweeper td.revealed span.mines8 {
+	color: maroon;
+}
+
+table.minesweeper td.revealed.mine {
+	background-image: url("mine.svg");
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center center;
+}
