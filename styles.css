@@ -38,33 +38,40 @@ table.minesweeper td {
 	text-align: center;
 	overflow: hidden;
 	text-overflow: clip;
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center center;
+	border-width: 2px;
+	font-weight: bold;
 }
 
 table.minesweeper td.unrevealed {
-	border: 2px outset;
+	border-style: outset;
+	border-color: white;
 	background-color: #CCCCCC;
 	cursor: pointer;
 }
 
-table.minesweeper td.unrevealed.flag {
+.svg table.minesweeper td.unrevealed.flag {
 	background-image: url("flag.svg");
-	background-size: contain;
-	background-repeat: no-repeat;
-	background-position: center center;
+}
+
+.no-svg table.minesweeper td.unrevealed.flag {
+	background-image: url("flag.png");
 }
 
 table.minesweeper td.unrevealed.flag.correct {
-	border: 2px outset green;
+	border-color: green;
 }
 
 table.minesweeper td.unrevealed.flag.incorrect {
-	border: 2px outset red;
+	border-color: red;
 }
 
 table.minesweeper td.revealed {
-	border: 2px solid #999999;
+	border-style: solid;
+	border-color: #999999;
 	background-color: #AAAAAA;
-	font-weight: bold;
 }
 
 table.minesweeper td.revealed span.mines0 {
@@ -102,9 +109,10 @@ table.minesweeper td.revealed span.mines8 {
 	color: maroon;
 }
 
-table.minesweeper td.revealed.mine {
+.svg table.minesweeper td.revealed.mine {
 	background-image: url("mine.svg");
-	background-size: contain;
-	background-repeat: no-repeat;
-	background-position: center center;
+}
+
+.no-svg table.minesweeper td.revealed.mine {
+	background-image: url("mine.png");
 }
