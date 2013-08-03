@@ -3,16 +3,19 @@ if ("undefined" === typeof(MineSweeper)) {
 }
 
 MineSweeper.Board = function(container, rows, cols, mineCount) {
+	this.container = container;
 	this.table = $('<table>');
 	this.table.addClass('minesweeper');
 	this.buildTable(rows, cols);
 	this.unrevealed = this.width() * this.height();
 	this.mineCount = mineCount;
 	this.addMines();
-	container.append(this.table);
+	this.container.append(this.table);
+	this.enable();
 };
 
 $.extend(MineSweeper.Board.prototype, {
+	mineCount: 0,
 	flagsUsed: 0,
 	width: function() {
 		return this.table[0].rows[0].cells.length;
@@ -23,16 +26,11 @@ $.extend(MineSweeper.Board.prototype, {
 	getCell: function(r, c) {
 		return $(this.table[0].rows[r].cells[c]);
 	},
-	getMineCount: function() {
-		return this.mineCount;
-	},
-	setMineCount: function(newMineCount) {
-		this.mineCount = newMineCount;
-		return this;
-	},
 	buildTable: function(rows, cols) {
 		var board = this, r, c, row, cell, cw = Math.floor(100 / cols), ch = Math.floor(100 / rows);
-		this.table.empty();
+		board.table.off('click', 'td');
+		board.table.off('contextmenu', 'td');
+		board.table.empty();
 		for (r = 0; r < rows; r++) {
 			row = $('<tr>');
 			row.css('height', ch + '%');
@@ -43,13 +41,19 @@ $.extend(MineSweeper.Board.prototype, {
 				.data('r', r).data('c', c);
 				row.append(cell);
 			}
-			this.table.append(row);
+			board.table.append(row);
 		}
-		this.table.on('click', 'td', function(event) {
-			board.revealSquare($(this).data('r'), $(this).data('c'));
+		board.table.on('click', 'td', function(event) {
+			board.container.trigger(MineSweeper.eventNames.startGame);
+			if (board.isEnabled()) {
+				board.revealSquare($(this).data('r'), $(this).data('c'));
+			}
 			return false;
 		}).on('contextmenu', 'td', function(event) {
-			board.toggleFlag($(this).data('r'), $(this).data('c'));
+			board.container.trigger(MineSweeper.eventNames.startGame);
+			if (board.isEnabled()) {
+				board.toggleFlag($(this).data('r'), $(this).data('c'));
+			}
 			return false;
 		});
 	},
@@ -95,9 +99,12 @@ $.extend(MineSweeper.Board.prototype, {
 				if (rr === r && cc === c) {
 					continue; // Skip existing square
 				}
-				callback(rr, cc);
+				if (!callback(rr, cc)) {
+					return this; // Terminate enumeration
+				}
 			}
 		}
+		return this;
 	},
 	makeNumMinesSpan: function(n) {
 		var span = $('<span>');
@@ -110,61 +117,137 @@ $.extend(MineSweeper.Board.prototype, {
 		return span;
 	},
 	revealSquare: function(r, c) {
-		var board = this, mines, cell = this.getCell(r, c);
+		var board = this, mines, cell;
+		cell = this.getCell(r, c);
 		if (cell.hasClass('flag') || cell.hasClass('revealed')) {
-			return; // Flagged or already revealed
+			return this; // Flagged or already revealed
 		}
 		this.unrevealed--;
 		cell.removeClass('unrevealed').addClass('revealed');
 		if (cell.hasClass('mine')) {
 			// TODO: Lose
-			console.log('You lose!');
-			this.revealBoard();
+			$().toastmessage('showNoticeToast', 'You lose!');
+			this.disable();
+			this.revealBoard(false);
+			this.container.trigger(MineSweeper.eventNames.lostGame);
 		} else {
 			mines = 0;
-			this.enumNeighbours(r, c, function(nr, nc) {
+			board.enumNeighbours(r, c, function(nr, nc) {
 				if (board.getCell(nr, nc).hasClass('mine')) {
 					mines++;
 				}
+				return true;
 			});
-			if (mines) {
+			if (mines > 0) {
+				// Show count of neighbouring mines and stop.
 				cell.append(this.makeNumMinesSpan(mines));
 			} else {
-				this.enumNeighbours(r, c, function(nr, nc) {
+				// No neighbouring mines. Reveal all neighbour squares.
+				board.enumNeighbours(r, c, function(nr, nc) {
 					board.revealSquare(nr, nc);
+					return true;
 				});
 			}
 		}
-		if (this.unrevealed <= this.mineCount) {
+		if (this.unrevealed <= this.mineCount && this.isEnabled()) {
 			// TODO: Won
-			console.log('You win!');
-			this.revealBoard();
+			$().toastmessage('showNoticeToast', 'You win!');
+			this.disable();
+			this.revealBoard(true);
+			this.container.trigger(MineSweeper.eventNames.wonGame);
 		}
+		return this;
 	},
 	toggleFlag: function(r, c) {
-		var cell = this.getCell(r, c);
+		var cell;
+		cell = this.getCell(r, c);
 		if (cell.hasClass('flag')) {
 			cell.removeClass('flag');
 			this.flagsUsed--;
+			this.container.trigger(MineSweeper.eventNames.flagsUsedChanged);
+		} else if (this.flagsUsed >= this.mineCount) {
+			$().toastmessage('showNoticeToast', 'No flags left');
 		} else {
-			if (this.flagsUsed >= this.mineCount) {
-				return; // All flags already used
-			}
 			cell.addClass('flag');
 			this.flagsUsed++;
+			this.container.trigger(MineSweeper.eventNames.flagsUsedChanged);
 		}
+		return this;
 	},
-	revealBoard: function() {
+	revealBoard: function(autoFlagMines) {
 		var r, c, cell;
 		for (r = 0; r < this.height(); r++) {
 			for (c = 0; c < this.width(); c++) {
 				cell = this.getCell(r, c);
 				if (cell.hasClass('flag')) {
 					cell.addClass(cell.hasClass('mine') ? 'correct' : 'incorrect');
+				} else if (autoFlagMines && cell.hasClass('mine')) {
+					cell.addClass('flag').addClass('correct');
+					this.flagsUsed++;
+					this.container.trigger(MineSweeper.eventNames.flagsUsedChanged);
 				} else {
 					cell.removeClass('unrevealed').addClass('revealed');
 				}
 			}
 		}
+		return this;
+	},
+	getMineCount: function() {
+		return this.mineCount;
+	},
+	setMineCount: function(newMineCount) {
+		if (newMineCount !== this.mineCount) {
+			this.mineCount = newMineCount;
+			this.container.trigger(MineSweeper.eventNames.numMinesChanged);
+		}
+		return this;
+	},
+	enable: function() {
+		if (this.isDisabled()) {
+			this.table.addClass('enabled');
+			this.container.trigger(MineSweeper.eventNames.flagsUsedChanged);
+			this.container.trigger(MineSweeper.eventNames.numMinesChanged);
+			this.container.trigger(MineSweeper.eventNames.sizeChanged);
+		}
+		return this;
+	},
+	disable: function() {
+		this.table.removeClass('enabled');
+		return this;
+	},
+	isEnabled: function() {
+		return this.table.hasClass('enabled');
+	},
+	isDisabled: function() {
+		return !this.isEnabled();
+	},
+	getFlagsUsed: function() {
+		return this.flagsUsed;
+	},
+	getFlagsLeft: function() {
+		return this.mineCount - this.flagsUsed;
+	},
+	getRevealed: function() {
+		return this.height() * this.width() - this.unrevealed;
+	},
+	getUnRevealed: function() {
+		return this.unrevealed;
+	},
+	reset: function() {
+		this.unrevealed = this.height() * this.width();
+		this.flagsUsed = 0;
+		this.buildTable(this.height(), this.width());
+		this.addMines();
+		this.enable();
+		return this;
 	}
 });
+
+MineSweeper.eventNames = {
+	startGame: 'MineSweeper.startGame',
+	wonGame: 'MineSweeper.wonGame',
+	lostGame: 'MineSweeper.lostGame',
+	flagsUsedChanged: 'MineSweeper.flagsUsedChanged',
+	numMinesChanged: 'MineSweeper.numMinesChanged',
+	sizeChanged: 'MineSweeper.sizeChanged'
+};

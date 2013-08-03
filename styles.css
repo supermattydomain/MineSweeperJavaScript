@@ -1,5 +1,9 @@
 @CHARSET "UTF-8";
 
+.clearfloat {
+	clear: both;
+}
+
 .resizable {
 	float: left; /* trigger shrinkwrap */
 	padding: 10px;
@@ -7,6 +11,22 @@
 	position: relative;
 	width: 250px;
 	height: 250px;
+}
+
+#numMinesLabel {
+	float: left;
+}
+
+#numMinesDisplay {
+	float: left;
+}
+
+#numMinesSlider {
+	float: left;
+	position: relative;
+	height: 1em;
+	width: 10em;
+	margin-left: 0.5em;
 }
 
 #board {
@@ -49,6 +69,9 @@ table.minesweeper td.unrevealed {
 	border-style: outset;
 	border-color: white;
 	background-color: #CCCCCC;
+}
+
+table.minesweeper.enabled td.unrevealed {
 	cursor: pointer;
 }
 
@@ -72,6 +95,10 @@ table.minesweeper td.revealed {
 	border-style: solid;
 	border-color: #999999;
 	background-color: #AAAAAA;
+}
+
+table.minesweeper td.revealed span {
+	cursor: default;
 }
 
 table.minesweeper td.revealed span.mines0 {
