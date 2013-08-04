@@ -10,6 +10,7 @@
   <script type="text/javascript" src="../lib/jquery-ui/jquery-ui-1.10.2.custom.min.js"></script>
   <script type="text/javascript" src="../lib/jquery-toastmessage-plugin/src/main/javascript/jquery.toastmessage.min.js"></script>
   <script type="text/javascript" src="../lib/js-lib/maths.js"></script>
+  <script type="text/javascript" src="../lib/js-lib/dates.js"></script>
   <script type="text/javascript" src="Modernizr-latest.js"></script>
   <script type="text/javascript" src="minesweeper.js"></script>
 </head>
@@ -17,14 +18,16 @@
 
 <div id="controls">
   <div id="flagsLeftContainer">
-    Flags remaining: <span id="flagsLeftDisplay">0</span>
+    <span id="flagsLeftLabel">Flags remaining:</span>
+    <span id="flagsLeftDisplay">0</span>
   </div>
   <div id="timeTakenContainer">
-    Time: <span id="timeTaken">0</span>
+    <span id="timeTakenLabel">Time:</span>
+    <span id="timeTakenDisplay">&mdash;</span>
   </div>
   <div id="numMinesContainer">
-    <span id="numMinesLabel">Mines: </span>
-    <span id="numMinesDisplay">0</span>
+    <span id="numMinesLabel">Mines:</span>
+    <span id="numMinesDisplay">&mdash;</span>
     <div id="numMinesSlider"></div>
   </div>
   <br class="clearfloat" />
@@ -42,16 +45,21 @@ $("button, input[type=checkbox]").button();
 $('textfield.numeric, input.numeric').spinner();
 var
 	container = $('#board'),
-	board = new MineSweeper.Board(container, 10, 10, 10),
+	board,
 	flagsLeftDisplay = $('#flagsLeftDisplay'),
 	buttonReset = $('#buttonReset'),
-	timeTaken = $('#timeTaken'),
+	timeTakenDisplay = $('#timeTakenDisplay'),
 	numMinesSlider = $('#numMinesSlider'),
 	numMinesDisplay = $('#numMinesDisplay'),
-	interval = undefined
+	interval = undefined,
+	seconds = 0,
+	initialRows = 10,
+	initialCols = 10,
+	initialMines = 10
 ;
+numMinesSlider.slider({ min: 1, value: initialMines });
+board = new MineSweeper.Board(container, initialRows, initialCols, numMinesSlider.slider('option', 'value'));
 // TODO: Edit field (with spinner) to control board dimensions
-// FIXME: Dragging num-mines slider to 1 then to max causes runtime error
 $('.resizable').resizable({
 	handles: 'all',
 	animate: false,
@@ -60,7 +68,8 @@ $('.resizable').resizable({
 	aspectRatio: 1 // TODO: Support non-square board
 });
 function timerTick() {
-	timeTaken.text(+timeTaken.text() + 1);
+	seconds++;
+	timeTakenDisplay.text(humanReadableDuration(seconds * 1000, humanReadableDuration.oneSecond));
 }
 function stopTimer() {
 	if (interval) {
@@ -76,10 +85,10 @@ function startTimer() {
 function reset() {
 	board.reset();
 	stopTimer();
-	timeTaken.text(0);
+	seconds = 0;
+	timeTakenDisplay.html('&mdash;');
 }
 buttonReset.on('click', reset);
-numMinesSlider.slider({ min: 1 });
 numMinesSlider.on('slidechange', function(event, ui) {
 	board.setMineCount(numMinesSlider.slider('option', 'value'));
 	reset();
@@ -96,10 +105,10 @@ container.on(MineSweeper.eventNames.flagsUsedChanged, function() {
 })
 .on(MineSweeper.eventNames.startGame, startTimer)
 .on(MineSweeper.eventNames.wonGame, stopTimer)
-.on(MineSweeper.eventNames.lostGame, stopTimer);
-container.trigger(MineSweeper.eventNames.flagsUsedChanged);
-container.trigger(MineSweeper.eventNames.numMinesChanged);
-container.trigger(MineSweeper.eventNames.sizeChanged);
+.on(MineSweeper.eventNames.lostGame, stopTimer)
+.trigger(MineSweeper.eventNames.flagsUsedChanged)
+.trigger(MineSweeper.eventNames.numMinesChanged)
+.trigger(MineSweeper.eventNames.sizeChanged);
 </script>
 
 </body>
